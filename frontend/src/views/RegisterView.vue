@@ -87,15 +87,7 @@
             </div>
           </div>
           <!-- เลขบัตรประจำตัวประชาชน — แสดงเสมอ (OCR fills this) -->
-          <div class="col-span-2">
-            <label class="text-sm text-gray-600 mb-1 block">เลขประจำตัวประชาชน *</label>
-            <input v-if="form.idType !== 'passport' && form.idType !== 'g_code' && form.idType !== 'other'"
-              v-model="form.idCard" type="text" inputmode="numeric"
-              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13" class="input-field" @keydown="blockNonDigit" />
-            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
-              class="input-field" @input="form.idCard = form.idCard.toUpperCase()" />
-            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint || 'กรอกตัวเลข 13 หลัก ไม่มีขีด' }}</p>
-          </div>
+
           <div class="col-span-2">
             <label class="text-sm text-gray-600 mb-1 block">ประเภทเอกสารแสดงตน *</label>
             <select v-model="form.idType" class="input-field" @change="form.idCard = ''">
@@ -106,7 +98,18 @@
               <option value="other">เอกสารราชการอื่น ๆ</option>
             </select>
           </div>
-          <p v-if="idCardError" class="text-red-500 text-sm -mt-2 mb-1">{{ idCardError }}</p>
+
+          <div class="col-span-2">
+            <label class="text-sm text-gray-600 mb-1 block">เลขประจำตัวประชาชน *</label>
+            <input v-if="form.idType !== 'passport' && form.idType !== 'g_code' && form.idType !== 'other'"
+              v-model="form.idCard" type="text" inputmode="numeric"
+              placeholder="เลขประจำตัวประชาชน 13 หลัก" maxlength="13" class="input-field" 
+              @keydown="blockNonDigit" @input="checkDuplicateIdCard(form.idCard)" />
+            <input v-else v-model="form.idCard" type="text" :placeholder="idTypePlaceholder" maxlength="20"
+              class="input-field" @input="form.idCard = form.idCard.toUpperCase(); checkDuplicateIdCard(form.idCard)" />
+            <p class="text-xs text-gray-400 mt-1">{{ idTypeHint || 'กรอกตัวเลข 13 หลัก ไม่มีขีด' }}</p>
+            <p v-if="idCardError" class="text-red-500 text-sm mt-1 mb-1">{{ idCardError }}</p>
+          </div>
           <div>
             <label class="text-sm text-gray-600 mb-1 block">คำนำหน้าชื่อ *</label>
             <select v-model="form.prefix" class="input-field">
@@ -752,10 +755,10 @@ function selectPlan(ap_id: number, cur_id: number) {
 }
 
 async function loadExpenses(curId: number) {
-  console.log('loadExpenses called with curId:', curId)
   try {
+   
     const res = await applicationService.getExpenses(curId)
-    console.log('expenses response:', res.data)
+    console.log('expenses ที่ได้:', res.data)
     expenses.value = res.data.data
     expenses.value.forEach((e: any) => {
       if (!form.expenseOrders[e.exp_id]) {
