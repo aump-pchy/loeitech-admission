@@ -251,6 +251,7 @@
                 <th class="px-4 py-3 text-left">สาขาวิชา</th>
                 <th class="px-4 py-3 text-center">สถานะ</th>
                 <th class="px-4 py-3 text-left">เบอร์โทร</th>
+                <th class="px-4 py-3 text-center">หลักฐาน</th>
                 <th class="px-4 py-3 text-center">ยืนยันสิทธ์</th>
               </tr>
             </thead>
@@ -283,6 +284,13 @@
                   </span>
                 </td>
                 <td class="px-4 py-3 text-gray-600">{{ row.เบอร์โทร || '-' }}</td>
+                <td class="px-4 py-3 text-center" @click.stop>
+                  <button @click="openDocModal({ ...row, _showAll: true })"
+                    class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-semibold transition-colors">
+                    <Eye class="w-3.5 h-3.5" />
+                    ดูเอกสาร
+                  </button>
+                </td>
                 <td class="px-4 py-3">
                   <template v-if="row.สถานะ === 'pending_approve'">
                     <button @click.stop="openInfoModal(row)"
@@ -2510,7 +2518,7 @@ const openDocModal = async (row: any) => {
     open: true,
     name: `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`,
     appId: row.ลำดับ,
-    status: row._showAll ? '' : (row.สถานะ || ''),
+    status: row.สถานะ || '',
     slipApproved: null,
     documents: [],
     activeTab: '',
@@ -2525,9 +2533,7 @@ const openDocModal = async (row: any) => {
       let docs = res.data.documents as { doc_type: string; file_url: string }[]
       docModal.value.enrolledData = res.data.applicant || row._savedInfoData || null
 
-      if (row._showAll) {
-        docs = docs.filter((d: any) => d.doc_type !== 'payment_slip')
-      } else if (row._filterByStatus && row.สถานะ) {
+      if (row._filterByStatus && row.สถานะ) {
         const allowed = DOC_FILTER[row.สถานะ] ?? null
         if (allowed) docs = docs.filter((d: any) => allowed.includes(d.doc_type))
       }
@@ -2541,11 +2547,15 @@ const openDocModal = async (row: any) => {
         docModal.value.slipErrorMessage = res.data.slip_error_message || ''
       }
 
-      if (!row._showAll && row.สถานะ === 'pending_payment') {
+      if (row._showAll) {
+        docModal.value.activeTab = docModal.value.documents.find(
+          d => d.doc_type !== 'payment_slip'
+        )?.doc_type || docModal.value.documents[0]?.doc_type || ''
+      } else if (row.สถานะ === 'pending_payment') {
         docModal.value.activeTab = docModal.value.documents.find(
           d => d.doc_type === 'payment_slip'
         )?.doc_type || '__no_slip__'
-      } else if (!row._showAll && row.สถานะ === 'enrolled') {
+      } else if (row.สถานะ === 'enrolled') {
         docModal.value.activeTab = '__enrollment_cert__'
       } else {
         docModal.value.activeTab = docModal.value.documents.find(
