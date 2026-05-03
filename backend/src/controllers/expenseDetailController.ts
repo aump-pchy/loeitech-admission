@@ -92,7 +92,6 @@ export const getExpenseImage = async (req: Request, res: Response) => {
 // Create new expense detail
 export const createExpenseDetail = async (req: Request, res: Response) => {
   try {
-    console.log('req.body:', req.body)
       const { exp_name, exp_detail, exp_img, cur_id, exp_cost, payment_type, exp_sizes } = req.body
     
     if (!exp_name || !exp_detail || !cur_id || exp_cost === undefined || exp_cost === null || exp_cost === '') {

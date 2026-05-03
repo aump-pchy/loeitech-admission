@@ -290,7 +290,6 @@ export const checkStatus = async (req: Request, res: Response) => {
     }
 
     const row = result.rows[0]
-    console.log('self_front_url from DB:', row.self_front_url)
 const toUrl = (filePath: string | null) => {
   if (!filePath) return null
   const filename = filePath.replace(/\\/g, '/').split('/').pop()

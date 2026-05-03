@@ -53,7 +53,6 @@ export const getApplicants = async (_req: Request, res: Response) => {
       ORDER BY a.created_at DESC
     `
     const result = await pool.query(query)
-    console.log('sample payment row:', result.rows[0])
 
     const applicants = result.rows.map(row => ({
       app_id:         row.app_id,

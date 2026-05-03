@@ -1018,8 +1018,6 @@ const prevLevelLabel = (level: string | undefined) => {
 }
 
 const openInfoModal = async (row: any) => {
-  console.log('row data:', row)  // ← เพิ่มบรรทัดนี้
-  console.log('id card:', row.เลขบัตรประชาชน)
   infoModal.value = {
     open: true,
     name: `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`,
@@ -2635,7 +2633,6 @@ const openDocModal = async (row: any) => {
   }
   try {
     const res = await apiService.getApplicantDocuments(row.ลำดับ)
-    console.log('res.data:', res.data)
     if (res.success) {
       let docs = res.data.documents as { doc_type: string; file_url: string }[]
       docModal.value.enrolledData = res.data.applicant || row._savedInfoData || null
@@ -3301,11 +3298,10 @@ async function generateCombinedTwoPagePDF(row: any) {
   let dbData: any = {}
   try {
     const dbRes = await api.get(`/enrollments/orders/${row.เลขบัตรประชาชน}`)
-    console.log('orders response:', dbRes.data)
-orderItems = dbRes.data?.data ?? []
+    orderItems = dbRes.data?.data ?? []
   } catch (e) {
-  console.warn('โหลด orders ไม่ได้', e)
-}
+    console.warn('โหลด orders ไม่ได้')
+  }
 
   const fullName = `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}`
   let y = 2
@@ -3627,7 +3623,6 @@ orderItems = dbRes.data?.data ?? []
 
 
 async function generateOrderPageOnlyPDF(row: any) {
-    console.log('row.ลำดับ:', row.ลำดับ)
   const fontBase64 = await loadThaiFont()
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   if (fontBase64) {

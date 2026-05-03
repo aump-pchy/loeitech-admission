@@ -327,7 +327,6 @@ export const getEnrollmentSummary = async (_req: Request, res: Response) => {
 export const getOrdersByIdCard = async (req: Request, res: Response) => {
   try {
     const { idCard } = req.params
-    console.log('🔍 getOrdersByIdCard idCard:', idCard) // ✅ เพิ่ม
 
     const result = await pool.query(`
       SELECT 
@@ -344,7 +343,6 @@ export const getOrdersByIdCard = async (req: Request, res: Response) => {
       ORDER BY ae.ae_id
     `, [idCard])
 
-    console.log('✅ result rows:', result.rows) // ✅ เพิ่ม
     sendSuccess(res, result.rows)
   } catch (err: any) {
     console.error('❌ getOrdersByIdCard error:', err.message) // ✅ เพิ่ม
