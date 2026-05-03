@@ -324,12 +324,16 @@
         <!-- ประเภทอื่นๆ -->
         <StudentsTable v-else-if="selectedExportType === 'students'" :data="paginatedData" :selected-ids="selectedIds"
           @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
-          @update:date-search="studentDateSearch = $event" />
+          @update:date-search="studentDateSearch = $event"
+          @generate-pdf="handleGeneratePDF" />
         <PaymentsTable v-else-if="selectedExportType === 'payments'" :data="paginatedData" :selected-ids="selectedIds"
-          @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
+          @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
+          @view-documents="(row) => openDocModal({ ...row, _showAll: true })"
+          @generate-pdf="handleGeneratePDF" />
         <OrdersTable v-else-if="selectedExportType === 'orders'" :data="paginatedData" :selected-ids="selectedIds"
           @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
-          @generate-pdf="handleGeneratePDF" />
+          @generate-pdf="handleGeneratePDF"
+          @view-documents="(row) => openDocModal({ ...row, _showAll: true })" />
 
       </template>
 
@@ -1806,7 +1810,9 @@ const filteredExportData = computed(() =>
     const matchStatus = selectedExportType.value === 'students'
       ? row.สถานะ === 'enrolled'
       : selectedExportType.value === 'payments'
-        ? row.สถานะ === 'enrolled'
+        ? (row.สถานะ === 'paid' || row.สถานะ === 'enrolled')
+        : selectedExportType.value === 'orders'
+        ? (selectedStatus.value ? row.สถานะ === selectedStatus.value : (row.สถานะ === 'paid' || row.สถานะ === 'enrolled'))
         : (!selectedStatus.value || (row.สถานะ && row.สถานะ === selectedStatus.value))
 
     let matchDate = true
@@ -1826,7 +1832,7 @@ const filteredExportData = computed(() =>
 
     return matchName && matchBranch && matchCur && matchStatus && matchDate && matchEnrolledDate
   }).sort((a, b) => {
-    const statusOrder = { 'pending_approve': 1, 'pending_payment': 2, 'enrolled': 3 }
+    const statusOrder = { 'pending_approve': 1, 'pending_payment': 2, 'paid': 3, 'enrolled': 4 }
     const aStatus = statusOrder[a.สถานะ as keyof typeof statusOrder] || 999
     const bStatus = statusOrder[b.สถานะ as keyof typeof statusOrder] || 999
     return aStatus - bStatus

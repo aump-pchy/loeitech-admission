@@ -31,10 +31,16 @@
             {{ row.enrolled_at ? new Date(row.enrolled_at).toLocaleDateString('th-TH') : '-' }}
           </td>
           <td class="px-4 py-3 text-center">
-            <button @click="openDocModal({ ...row, _showAll: true })"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition">
-              <Eye class="w-3.5 h-3.5" /> ดูรูป
-            </button>
+            <div class="flex items-center justify-center gap-1.5">
+              <button @click="openDocModal({ ...row, _showAll: true })"
+                class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition">
+                <Eye class="w-3.5 h-3.5" /> หลักฐาน
+              </button>
+              <button @click="$emit('generate-pdf', row)"
+                class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg text-xs font-semibold transition">
+                <Download class="w-3.5 h-3.5" /> ออเดอร์
+              </button>
+            </div>
           </td>
         </tr>
         <tr v-if="filteredData.length === 0">
@@ -141,7 +147,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import { Eye, ExternalLink, X } from 'lucide-vue-next'
+import { Eye, ExternalLink, X, Download } from 'lucide-vue-next'
 import { apiService } from '@/utils/api'
 import jsPDF from 'jspdf'
 
@@ -169,6 +175,7 @@ const emit = defineEmits<{
   'update:selected-ids': [ids: string[]]
   'toggle-all': []
   'update:date-search': [val: string]
+  'generate-pdf': [row: any]
 }>()
 
 // ─── Table ────────────────────────────────────────────────────────────────────
@@ -237,13 +244,13 @@ const openDocModal = async (row: any) => {
   try {
     const res = await apiService.getApplicantDocuments(row.ลำดับ)
     if (res.success) {
-      let docs = res.data.documents as { doc_type: string; file_url: string }[]
-      docs = docs.filter((d: any) => d.doc_type !== 'payment_slip')
+      const docs = res.data.documents as { doc_type: string; file_url: string }[]
       docModal.value.documents = docs.filter((d: any, i: number, self: any[]) =>
         i === self.findIndex((t: any) => t.doc_type === d.doc_type)
       )
       docModal.value.documents.push({ doc_type: '__certificate__', file_url: '' })
-      docModal.value.activeTab = docModal.value.documents[0]?.doc_type || ''
+      docModal.value.activeTab = docModal.value.documents.find(d => d.doc_type !== 'payment_slip')?.doc_type
+        || docModal.value.documents[0]?.doc_type || ''
     }
   } catch (e) {
     console.error('โหลดเอกสารไม่สำเร็จ', e)
