@@ -169,6 +169,43 @@ export const getApplicantDocuments = async (req: Request, res: Response) => {
   }
 }
 
+export const deleteApplicant = async (req: Request, res: Response) => {
+  const { app_id } = req.params
+  const client = await pool.connect()
+  try {
+    const found = await client.query(`SELECT app_id, full_name FROM applicants WHERE app_id = $1`, [app_id])
+    if (found.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลผู้สมัคร' })
+    }
+
+    // ดึง file paths ก่อนลบ
+    const docs = await client.query(`SELECT file_path FROM documents WHERE app_id = $1`, [app_id])
+    const slip = await client.query(`SELECT slip_path FROM payments WHERE app_id = $1`, [app_id])
+
+    await client.query('BEGIN')
+    await client.query(`DELETE FROM applicants WHERE app_id = $1`, [app_id])
+    await client.query('COMMIT')
+
+    // ลบไฟล์ที่อัพโหลด
+    const filePaths = [
+      ...docs.rows.map((r: any) => r.file_path),
+      slip.rows[0]?.slip_path,
+    ].filter(Boolean)
+
+    for (const filePath of filePaths) {
+      try { fs.unlinkSync(filePath) } catch {}
+    }
+
+    res.json({ success: true, message: `ลบข้อมูล ${found.rows[0].full_name} เรียบร้อยแล้ว` })
+  } catch (error) {
+    await client.query('ROLLBACK')
+    console.error('deleteApplicant error:', error)
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาดในการลบข้อมูล' })
+  } finally {
+    client.release()
+  }
+}
+
 export const truncateApplicants = async (_req: Request, res: Response) => {
   const client = await pool.connect()
   try {
