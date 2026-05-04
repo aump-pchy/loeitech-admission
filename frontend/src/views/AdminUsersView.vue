@@ -1072,7 +1072,7 @@ const openInfoModal = async (row: any) => {
   }
   try {
     const [appRes, ordersRes] = await Promise.allSettled([
-      api.get(`/applications/check/${row.เลขบัตรประชาชน}`),
+      api.get(`/admin/applicants/detail/${row.เลขบัตรประชาชน}`),
       api.get(`/enrollments/orders/${row.เลขบัตรประชาชน}`),
     ])
     if (appRes.status === 'fulfilled') infoModal.value.data = appRes.value.data?.data
@@ -1131,7 +1131,7 @@ const enrollStudent = async (student: any) => {
     // ดึงข้อมูลเพิ่มเติมก่อน
     let fullStudentData = { ...student }
     try {
-      const res = await api.get(`/applications/check/${student.เลขบัตรประชาชน}`)
+      const res = await api.get(`/admin/applicants/detail/${student.เลขบัตรประชาชน}`)
       const d = res.data?.data
       if (d) {
         fullStudentData = {
@@ -2155,7 +2155,7 @@ async function buildExportData(rows: any[], isExportAll = false): Promise<object
     // ── 1. ดึงข้อมูลจาก DB ──────────────────────────────
     let dbData: Record<string, any> = {}
     try {
-      const dbRes = await api.get(`/applications/check/${row.เลขบัตรประชาชน}`)
+      const dbRes = await api.get(`/admin/applicants/detail/${row.เลขบัตรประชาชน}`)
       const d = dbRes.data?.data
       const prevLevelMap: Record<string, string> = {
         m3: 'มัธยมศึกษาปีที่ 3',
@@ -2998,7 +2998,7 @@ async function generatePaymentReceiptPDF(row: any) {
   // ─── ดึงข้อมูลเพิ่มเติมจาก API ───────────────────────────
   let dbData: any = {}
   try {
-    const dbRes = await api.get(`/applications/check/${row.เลขบัตรประชาชน}`)
+    const dbRes = await api.get(`/admin/applicants/detail/${row.เลขบัตรประชาชน}`)
     dbData = dbRes.data?.data || {}
   } catch (e) {
     console.warn('โหลด DB ไม่ได้', e)
@@ -3524,7 +3524,7 @@ async function generateCombinedTwoPagePDF(row: any) {
 
   // ดึง dbData สำหรับหน้า 2
   try {
-    const dbRes = await api.get(`/applications/check/${row.เลขบัตรประชาชน}`)
+    const dbRes = await api.get(`/admin/applicants/detail/${row.เลขบัตรประชาชน}`)
     dbData = dbRes.data?.data || {}
   } catch { /* ผ่าน */ }
 
