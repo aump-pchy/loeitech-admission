@@ -113,6 +113,8 @@
           ออกจากระบบ
         </button>
         <p class="text-white/40 text-xs text-center mt-3">© 2026 วิทยาลัยเทคนิคเลย</p>
+        <p class="text-white/30 text-xs text-center mt-1">272 ถ.เจริญรัฐ ต.กุดป่อง อ.เมือง จ.เลย 42000</p>
+        <p class="text-white/30 text-xs text-center">โทร 042811591</p>
       </div>
     </aside>
 

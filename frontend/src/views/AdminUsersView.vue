@@ -1742,7 +1742,10 @@ const exportPaymentsListPDF = async () => {
   y += 8
   f('normal', 13)
   doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, y, { align: 'center' })
-  y += 3
+  y += 6
+  f('normal', 11)
+  doc.text('272 ถ.เจริญรัฐ ต.กุดป่อง อ.เมือง จ.เลย 42000  โทร 042811591', pageW / 2, y, { align: 'center' })
+  y += 4
   doc.setDrawColor(16, 185, 130)
   doc.setLineWidth(0.6)
   doc.line(L, y, pageW - L, y)
@@ -2608,7 +2611,10 @@ const printEnrollmentCert = async () => {
   doc.setFontSize(14)
   doc.setFont('THSarabun', 'normal')
   doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, y, { align: 'center' })
-  y += 10
+  y += 6
+  doc.setFontSize(11)
+  doc.text('272 ถ.เจริญรัฐ ต.กุดป่อง อ.เมือง จ.เลย 42000  โทร 042811591', pageW / 2, y, { align: 'center' })
+  y += 6
 
   doc.setDrawColor(16, 185, 130)
   doc.setLineWidth(0.8)
@@ -3197,6 +3203,9 @@ const exportOrdersListPDF = async () => {
   f('normal', 14)
   doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, y, { align: 'center' })
   y += 6
+  f('normal', 11)
+  doc.text('272 ถ.เจริญรัฐ ต.กุดป่อง อ.เมือง จ.เลย 42000  โทร 042811591', pageW / 2, y, { align: 'center' })
+  y += 6
 
   // ─── ช่วงวันที่ (หาจากข้อมูลที่เลือก) ──────────────────
   const validDates = rows
@@ -3390,6 +3399,9 @@ async function generateCombinedTwoPagePDF(row: any) {
   f('normal', 13)
   doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, y, { align: 'center' })
   y += 6
+  f('normal', 11)
+  doc.text('272 ถ.เจริญรัฐ ต.กุดป่อง อ.เมือง จ.เลย 42000  โทร 042811591', pageW / 2, y, { align: 'center' })
+  y += 5
 
   doc.setDrawColor(16, 185, 130)
   doc.setLineWidth(0.8)
@@ -3736,6 +3748,9 @@ orderItems = dbRes.data?.data ?? []
   f('normal', 13)
   doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, y, { align: 'center' })
   y += 6
+  f('normal', 11)
+  doc.text('272 ถ.เจริญรัฐ ต.กุดป่อง อ.เมือง จ.เลย 42000  โทร 042811591', pageW / 2, y, { align: 'center' })
+  y += 5
 
   doc.setDrawColor(16, 185, 130)
   doc.setLineWidth(0.8)

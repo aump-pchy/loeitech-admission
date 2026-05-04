@@ -861,21 +861,23 @@ async function generateCombinedPDF() {
 
     // ── HEADER ────────────────────────────────────────────────────
     doc.setFillColor(5, 150, 105)
-    doc.rect(0, 0, pageW, 32, 'F')
+    doc.rect(0, 0, pageW, 38, 'F')
 
     setFont('bold', 18, '#ffffff')
-    doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, 13, { align: 'center' })
-    setFont('normal', 12, '#d1fae5')
-    doc.text('ระบบรับสมัครนักเรียนนักศึกษาออนไลน์', pageW / 2, 22, { align: 'center' })
+    doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, 11, { align: 'center' })
+    setFont('normal', 11, '#d1fae5')
+    doc.text('272 ถ.เจริญรัฐ ต.กุดป่อง อ.เมือง จ.เลย 42000  โทร 042811591', pageW / 2, 19, { align: 'center' })
+    setFont('normal', 11, '#d1fae5')
+    doc.text('ระบบรับสมัครนักเรียนนักศึกษาออนไลน์', pageW / 2, 27, { align: 'center' })
 
     doc.setFillColor(240, 253, 244)
-    doc.rect(0, 32, pageW, 14, 'F')
+    doc.rect(0, 38, pageW, 14, 'F')
     doc.setDrawColor(5, 150, 105)
     doc.setLineWidth(0.5)
-    doc.line(0, 32, pageW, 32)
-    doc.line(0, 46, pageW, 46)
+    doc.line(0, 38, pageW, 38)
+    doc.line(0, 52, pageW, 52)
     setFont('bold', 16, '#065f46')
-    doc.text('เอกสารการมอบตัวนักเรียนนักศึกษา', pageW / 2, 42, { align: 'center' })
+    doc.text('เอกสารการมอบตัวนักเรียนนักศึกษา', pageW / 2, 48, { align: 'center' })
 
     // ── ส่วนที่ 1: ใบรับรองการมอบตัว ────────────────────────────
     let y = 54
