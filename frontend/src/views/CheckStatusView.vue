@@ -362,8 +362,11 @@ async function downloadEnrollmentCert() {
 
   doc.setFontSize(14)
   doc.setFont('THSarabun', 'normal')
-  doc.text('วิทยาลัยเทคนิคเลย ', pageW / 2, y, { align: 'center' })
-  y += 10
+  doc.text('วิทยาลัยเทคนิคเลย', pageW / 2, y, { align: 'center' })
+  y += 6
+  doc.setFontSize(11)
+  doc.text('272 ถ.เจริญรัฐ ต.กุดป่อง อ.เมือง จ.เลย 42000  โทร 042811591', pageW / 2, y, { align: 'center' })
+  y += 6
 
   doc.setDrawColor(16, 185, 130)
   doc.setLineWidth(0.8)
