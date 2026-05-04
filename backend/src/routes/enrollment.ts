@@ -5,15 +5,15 @@ import {
   getOnsiteEnrollments,
   upsertOnsiteEnrollment,
   getEnrollmentSummary,
-   verifySlip,
-   getOrdersByIdCard,
+  verifySlip,
+  getOrdersByIdCard,
 } from '../controllers/enrollmentController'
 import { upload } from '../middleware/upload'
-
+import { requireAuth } from '../middleware/auth'
 
 const router = Router()
 
-// มอบตัว + อัปโหลดเอกสาร
+// มอบตัว + อัปโหลดเอกสาร (นักเรียนใช้ — public)
 router.post('/confirm', upload.fields([
   { name: 'self_front',   maxCount: 1 },
   { name: 'self_back',    maxCount: 1 },
@@ -24,15 +24,18 @@ router.post('/confirm', upload.fields([
   { name: 'payment_slip', maxCount: 1 },
 ]), confirmEnrollment)
 
-// ตรวจสอบสลิป
-router.post('/verify-slip', upload.single('slip'), verifySlip) 
+// ตรวจสอบสลิป (นักเรียนใช้ — public)
+router.post('/verify-slip', upload.single('slip'), verifySlip)
 
-// ตรวจสอบสถานะ
+// ตรวจสอบสถานะ (นักเรียนใช้ — public)
 router.get('/status/:idCard', getEnrollmentStatus)
 
-// เพิ่ม route onsite
-router.get('/onsite', getOnsiteEnrollments)
-router.post('/onsite', upsertOnsiteEnrollment)
-router.get('/summary', getEnrollmentSummary)
+// ดึงข้อมูลการสั่งซื้อ (นักเรียนใช้ — public)
 router.get('/orders/:idCard', getOrdersByIdCard)
+
+// Admin-only routes
+router.get('/onsite', requireAuth, getOnsiteEnrollments)
+router.post('/onsite', requireAuth, upsertOnsiteEnrollment)
+router.get('/summary', requireAuth, getEnrollmentSummary)
+
 export default router

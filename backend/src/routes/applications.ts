@@ -13,15 +13,15 @@ import {
 } from '../controllers/applicationController'
 import { ocrIdCard } from '../controllers/ocrController'
 import { upload } from '../middleware/upload'
+import { requireAuth } from '../middleware/auth'
 
 const router = Router()
 
-// ข้อมูลสำหรับฟอร์มสมัคร
+// ข้อมูลสำหรับฟอร์มสมัคร (public — ใช้ตอนกรอกฟอร์ม)
 router.get('/curriculums', getCurriculums)
 router.get('/divisions', getDivisions)
 router.get('/expenses', getExpenses)
 router.get('/admission-plan', getAdmissionPlan)
-router.get('/pending', getPendingApplicants)
 
 // OCR บัตรประชาชน (Gemini Vision)
 router.post('/ocr-idcard', upload.single('image'), ocrIdCard)
@@ -34,24 +34,17 @@ router.post('/', upload.fields([
   { name: 'edu_back', maxCount: 1 },
 ]), createApplication)
 
-// ตรวจสอบบัตรประชาชนซ้ำ
+// ตรวจสอบบัตรประชาชนซ้ำ (public — ใช้ตอนกรอกฟอร์ม)
 router.post('/check-duplicate', checkDuplicateIdCard)
 
-// ตรวจสอบสถานะ
+// ตรวจสอบสถานะ (public — นักเรียนเช็คสถานะตัวเอง)
 router.get('/check/:idCard', checkStatus)
 
-// ดึงข้อมูลผู้สมัครทั้งหมด
-router.get('/applicants', getApplicants)
-
-// สถิติ
+// สถิติ (public — แสดงหน้าเว็บหลัก)
 router.get('/stats', getStats)
 
+// Admin-only routes
+router.get('/pending', requireAuth, getPendingApplicants)
+router.get('/applicants', requireAuth, getApplicants)
+
 export default router
-
-import {
-  // ... ของเดิม ...
-  enrollApplication,   // ← เพิ่มตรงนี้
-} from '../controllers/applicationController'
-
-// เพิ่ม route นี้
-router.post('/enroll', enrollApplication)

@@ -73,7 +73,7 @@ router.post('/expense-detail', requireAuth, createExpenseDetail)
 router.put('/expense-detail/:id', requireAuth, updateExpenseDetail)
 router.delete('/expense-detail/:id', requireAuth, deleteExpenseDetail)
 router.delete('/expense-detail/:id/image', requireAuth, deleteExpenseImage)
-router.get('/expense-detail/:id/image', getExpenseImage) 
+router.get('/expense-detail/:id/image', requireAuth, getExpenseImage)
 
 // Auth routes
 router.post('/login', login)

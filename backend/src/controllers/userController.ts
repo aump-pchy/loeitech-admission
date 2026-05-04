@@ -14,16 +14,23 @@ export const getUsers = async (req: Request, res: Response) => {
   }
 }
 
+const ALLOWED_ROLES = ['admin', 'staff']
+
 export const createUser = async (req: Request, res: Response) => {
   try {
     const { username, password, role } = req.body
+
+    if (!ALLOWED_ROLES.includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role' })
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10)
-    
+
     const result = await pool.query(
       'INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) RETURNING id, username, role, created_at',
       [username, hashedPassword, role]
     )
-    
+
     res.json({ success: true, data: result.rows[0] })
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to create user' })
@@ -34,6 +41,10 @@ export const updateUser = async (req: Request, res: Response) => {
   try {
     const { id } = req.params
     const { username, password, role } = req.body
+
+    if (!ALLOWED_ROLES.includes(role)) {
+      return res.status(400).json({ success: false, message: 'Invalid role' })
+    }
     
     let query = 'UPDATE users SET username = $1, role = $2'
     let params = [username, role]
