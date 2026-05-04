@@ -36,13 +36,20 @@
             {{ row.วันที่ชำระ || '-' }}
           </td>
           <td class="px-4 py-3 text-center">
-            <button
-              v-if="row._slipUrl"
-              @click="openSlipModal(row)"
-              class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition">
-              <Eye class="w-3.5 h-3.5" /> ดูสลิป
-            </button>
-            <span v-else class="text-xs text-gray-300">-</span>
+            <div class="flex items-center justify-center gap-1.5 flex-wrap">
+              <button @click="$emit('view-documents', row)"
+                class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-lg text-xs font-semibold transition">
+                <FileText class="w-3.5 h-3.5" /> หลักฐาน
+              </button>
+              <button v-if="row._slipUrl" @click="openSlipModal(row)"
+                class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded-lg text-xs font-semibold transition">
+                <Eye class="w-3.5 h-3.5" /> สลิป
+              </button>
+              <button @click="$emit('generate-pdf', row)"
+                class="inline-flex items-center gap-1 px-2.5 py-1.5 bg-green-50 hover:bg-green-100 text-green-600 rounded-lg text-xs font-semibold transition">
+                <Download class="w-3.5 h-3.5" /> ออเดอร์
+              </button>
+            </div>
           </td>
         </tr>
         <tr v-if="data.length === 0">
@@ -90,7 +97,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { Eye, ExternalLink, X } from 'lucide-vue-next'
+import { Eye, ExternalLink, X, FileText, Download } from 'lucide-vue-next'
 
 const props = defineProps<{
   data: any[]
@@ -101,6 +108,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   'update:selected-ids': [ids: string[]]
   'toggle-all': []
+  'view-documents': [row: any]
+  'generate-pdf': [row: any]
 }>()
 
 const toggleRow = (id: string) => {

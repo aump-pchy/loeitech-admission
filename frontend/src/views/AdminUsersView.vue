@@ -324,12 +324,18 @@
         <!-- ประเภทอื่นๆ -->
         <StudentsTable v-else-if="selectedExportType === 'students'" :data="paginatedData" :selected-ids="selectedIds"
           @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
-          @update:date-search="studentDateSearch = $event" />
+          @update:date-search="studentDateSearch = $event"
+          @generate-pdf="handleGeneratePDF"
+          @view-detail="openInfoModal"
+          @view-documents="(row) => openDocModal({ ...row, _showAll: true })" />
         <PaymentsTable v-else-if="selectedExportType === 'payments'" :data="paginatedData" :selected-ids="selectedIds"
-          @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected" />
+          @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
+          @view-documents="(row) => openDocModal({ ...row, _showAll: true })"
+          @generate-pdf="handleGeneratePDF" />
         <OrdersTable v-else-if="selectedExportType === 'orders'" :data="paginatedData" :selected-ids="selectedIds"
           @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
-          @generate-pdf="handleGeneratePDF" />
+          @generate-pdf="handleGeneratePDF"
+          @view-documents="(row) => openDocModal({ ...row, _showAll: true })" />
 
       </template>
 
@@ -580,11 +586,10 @@
 
           <!-- ── Footer ── -->
           <div class="flex items-center justify-between px-5 py-4 border-t border-gray-100 bg-white flex-shrink-0">
-            <p class="text-xs text-gray-400 flex items-center gap-1.5">
-              <Calendar class="w-3.5 h-3.5" />
-              วันที่สมัคร:
-              {{ infoModal.data ? new Date(infoModal.data.created_at).toLocaleDateString('th-TH') : '-' }}
-            </p>
+            <button @click="openDeleteDialog"
+              class="inline-flex items-center gap-1.5 px-3 py-2 text-red-500 hover:bg-red-50 border border-red-200 hover:border-red-300 rounded-xl text-sm font-semibold transition">
+              <Trash2 class="w-4 h-4" /> ลบข้อมูล
+            </button>
             <div class="flex gap-2">
               <button @click="infoModal.open = false"
                 class="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-xl transition font-semibold">
@@ -606,10 +611,16 @@
                 <Eye class="w-4 h-4" /> รายละเอียดการสมัคร
               </button>
 
-              <button v-else-if="infoModal.status === 'enrolled'" @click="printEnrollmentCert"
-                class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition shadow-sm shadow-emerald-200">
-                <BookCheck class="w-4 h-4" /> เอกสารมอบตัว
-              </button>
+              <template v-else-if="infoModal.status === 'enrolled'">
+                <button @click="openDocModalFromInfo"
+                  class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition shadow-sm shadow-blue-200">
+                  <Eye class="w-4 h-4" /> ดูเอกสาร
+                </button>
+                <button @click="printEnrollmentCert"
+                  class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition shadow-sm shadow-emerald-200">
+                  <BookCheck class="w-4 h-4" /> เอกสารมอบตัว
+                </button>
+              </template>
             </div>
           </div>
 
@@ -878,6 +889,70 @@
         </div>
       </div>
     </Teleport>
+
+    <!-- Delete Confirmation Dialog -->
+    <Teleport to="body">
+      <div v-if="deleteDialog.open"
+        class="fixed inset-0 z-[70] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+        @click.self="closeDeleteDialog">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+
+          <!-- Header -->
+          <div class="bg-red-500 px-6 py-5">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                <Trash2 class="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p class="font-bold text-white text-base">ลบข้อมูลผู้สมัคร</p>
+                <p class="text-red-100 text-xs mt-0.5">การกระทำนี้ไม่สามารถย้อนกลับได้</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="p-6 space-y-4">
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+              <p class="text-sm text-red-700 font-semibold">{{ deleteDialog.name }}</p>
+              <p class="text-xs text-red-500 mt-1">ข้อมูลทั้งหมดรวมถึงเอกสารและไฟล์ที่อัพโหลดจะถูกลบถาวร</p>
+            </div>
+
+            <div>
+              <label class="block text-sm font-semibold text-gray-700 mb-2">
+                พิมพ์ชื่อ-สกุล เพื่อยืนยัน
+              </label>
+              <p class="text-xs text-gray-400 mb-2">
+                พิมพ์ว่า <span class="font-bold text-gray-600 select-none">{{ deleteDialog.name }}</span>
+              </p>
+              <input v-model="deleteDialog.confirmText" type="text"
+                placeholder="พิมพ์ชื่อ-สกุลเพื่อยืนยัน"
+                class="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none transition"
+                :class="deleteDialog.confirmText === deleteDialog.name
+                  ? 'border-red-400 focus:border-red-500 bg-red-50'
+                  : 'border-gray-200 focus:border-gray-400'"
+                @keydown.enter="deleteDialog.confirmText === deleteDialog.name && confirmDelete()" />
+            </div>
+          </div>
+
+          <!-- Footer -->
+          <div class="flex justify-end gap-2 px-6 py-4 border-t border-gray-100">
+            <button @click="closeDeleteDialog"
+              class="px-4 py-2 text-sm text-gray-500 hover:bg-gray-100 rounded-xl font-semibold transition">
+              ยกเลิก
+            </button>
+            <button @click="confirmDelete"
+              :disabled="deleteDialog.confirmText !== deleteDialog.name || deleteDialog.loading"
+              class="inline-flex items-center gap-2 px-5 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-semibold transition disabled:opacity-40 disabled:cursor-not-allowed">
+              <span v-if="deleteDialog.loading"
+                class="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <Trash2 v-else class="w-4 h-4" />
+              ลบข้อมูลถาวร
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -887,7 +962,7 @@ import { apiService } from '@/utils/api'
 
 import {
   Download, CreditCard, ShoppingBag,
-  Users, Search, Filter, ChevronDown, X, User, Eye, FileText, BookCheck, Calendar,
+  Users, Search, Filter, ChevronDown, X, User, Eye, FileText, BookCheck, Calendar, Trash2,
 } from 'lucide-vue-next'
 import * as XLSX from 'xlsx'
 import Tesseract from 'tesseract.js'
@@ -924,6 +999,14 @@ const infoModal = ref({
   data: null as any,
 })
 
+const deleteDialog = ref({
+  open: false,
+  appId: '',
+  name: '',
+  confirmText: '',
+  loading: false,
+})
+
 const prevLevelLabel = (level: string | undefined) => {
   if (!level) return '-'
   const map: Record<string, string> = {
@@ -943,8 +1026,6 @@ const prevLevelLabel = (level: string | undefined) => {
 }
 
 const openInfoModal = async (row: any) => {
-  console.log('row data:', row)  // ← เพิ่มบรรทัดนี้
-  console.log('id card:', row.เลขบัตรประชาชน)
   infoModal.value = {
     open: true,
     name: `${row.คำนำหน้า}${row.ชื่อ_นามสกุล}`,
@@ -1806,7 +1887,9 @@ const filteredExportData = computed(() =>
     const matchStatus = selectedExportType.value === 'students'
       ? row.สถานะ === 'enrolled'
       : selectedExportType.value === 'payments'
-        ? row.สถานะ === 'enrolled'
+        ? (row.สถานะ === 'paid' || row.สถานะ === 'enrolled')
+        : selectedExportType.value === 'orders'
+        ? (selectedStatus.value ? row.สถานะ === selectedStatus.value : (row.สถานะ === 'paid' || row.สถานะ === 'enrolled'))
         : (!selectedStatus.value || (row.สถานะ && row.สถานะ === selectedStatus.value))
 
     let matchDate = true
@@ -1826,7 +1909,7 @@ const filteredExportData = computed(() =>
 
     return matchName && matchBranch && matchCur && matchStatus && matchDate && matchEnrolledDate
   }).sort((a, b) => {
-    const statusOrder = { 'pending_approve': 1, 'pending_payment': 2, 'enrolled': 3 }
+    const statusOrder = { 'pending_approve': 1, 'pending_payment': 2, 'paid': 3, 'enrolled': 4 }
     const aStatus = statusOrder[a.สถานะ as keyof typeof statusOrder] || 999
     const bStatus = statusOrder[b.สถานะ as keyof typeof statusOrder] || 999
     return aStatus - bStatus
@@ -2385,6 +2468,36 @@ const openPaymentSlipOnly = async () => {
   })
 }
 
+const openDeleteDialog = () => {
+  deleteDialog.value = {
+    open: true,
+    appId: infoModal.value.appId,
+    name: infoModal.value.name,
+    confirmText: '',
+    loading: false,
+  }
+}
+
+const closeDeleteDialog = () => {
+  deleteDialog.value.open = false
+  deleteDialog.value.confirmText = ''
+}
+
+const confirmDelete = async () => {
+  if (deleteDialog.value.confirmText !== deleteDialog.value.name) return
+  deleteDialog.value.loading = true
+  try {
+    await api.delete(`/admin/applicants/${deleteDialog.value.appId}`)
+    applicants.value = applicants.value.filter(a => a.app_id !== deleteDialog.value.appId)
+    closeDeleteDialog()
+    infoModal.value.open = false
+  } catch (err) {
+    console.error('ลบไม่สำเร็จ:', err)
+  } finally {
+    deleteDialog.value.loading = false
+  }
+}
+
 const openDocModalFromInfo = () => {
   const savedData = infoModal.value.data
   infoModal.value.open = false
@@ -2528,7 +2641,6 @@ const openDocModal = async (row: any) => {
   }
   try {
     const res = await apiService.getApplicantDocuments(row.ลำดับ)
-    console.log('res.data:', res.data)
     if (res.success) {
       let docs = res.data.documents as { doc_type: string; file_url: string }[]
       docModal.value.enrolledData = res.data.applicant || row._savedInfoData || null
@@ -3194,11 +3306,10 @@ async function generateCombinedTwoPagePDF(row: any) {
   let dbData: any = {}
   try {
     const dbRes = await api.get(`/enrollments/orders/${row.เลขบัตรประชาชน}`)
-    console.log('orders response:', dbRes.data)
-orderItems = dbRes.data?.data ?? []
+    orderItems = dbRes.data?.data ?? []
   } catch (e) {
-  console.warn('โหลด orders ไม่ได้', e)
-}
+    console.warn('โหลด orders ไม่ได้')
+  }
 
   const fullName = `${row.คำนำหน้า || ''}${row.ชื่อ_นามสกุล || ''}`
   let y = 2
@@ -3520,7 +3631,6 @@ orderItems = dbRes.data?.data ?? []
 
 
 async function generateOrderPageOnlyPDF(row: any) {
-    console.log('row.ลำดับ:', row.ลำดับ)
   const fontBase64 = await loadThaiFont()
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   if (fontBase64) {
