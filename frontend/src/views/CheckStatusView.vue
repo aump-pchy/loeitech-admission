@@ -288,6 +288,23 @@ async function checkStatus() {
 // ดาวน์โหลดใบแจ้งชำระเงิน — ใช้ exportPaymentPDF เหมือน RegisterView
 async function downloadPaymentSlip() {
   if (!result.value) return
+
+  let expenses: any[] = []
+  try {
+    const apiBase = (import.meta.env.VITE_API_URL as string) || 'http://localhost:3001/api'
+    const res = await fetch(`${apiBase}/enrollments/orders/${encodeURIComponent(idCard.value)}`)
+    if (res.ok) {
+      const json = await res.json()
+      expenses = (json.data ?? []).map((item: any) => ({
+        exp_name: item.item_name,
+        size: item.size,
+        quantity: item.quantity,
+        unit_price: item.unit_price,
+        total_price: item.total_price,
+      }))
+    }
+  } catch {}
+
   await exportPaymentPDF({
     prefix: result.value.raw.prefix || '',
     fullName: result.value.raw.full_name || '',
@@ -296,7 +313,8 @@ async function downloadPaymentSlip() {
     courseLabel: result.value.course || '',
     branchName: result.value.branch || '',
     totalPrice: result.value.totalAmount || 0,
-    dueDate: result.value.dueDate || '',  // ส่งวันหมดเขตจาก DB มาเลย
+    dueDate: result.value.dueDate || '',
+    expenses,
   })
 }
 

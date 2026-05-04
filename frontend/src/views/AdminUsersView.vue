@@ -22,7 +22,7 @@
             </div>
             <div class="flex items-center gap-2">
               <button v-for="item in exportItems" :key="item.type"
-                @click="selectedExportType = selectedExportType === item.type ? '' : item.type; selectedIds = []"
+                @click="selectedExportType = selectedExportType === item.type ? '' : item.type; selectedIds = []; selectedStatus = ''"
                 :class="[
                   'flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold border transition',
                   selectedExportType === item.type
@@ -150,12 +150,13 @@
             <ChevronDown
               class="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400 pointer-events-none" />
           </div>
-          <div v-if="!selectedExportType" class="relative">
+          <div v-if="!selectedExportType || selectedExportType === 'students'" class="relative">
             <select v-model="selectedStatus"
               class="pl-4 pr-8 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-green-400 focus:outline-none bg-white appearance-none cursor-pointer min-w-[140px] text-gray-700">
               <option value="">ทุกสถานะ</option>
               <option value="pending_payment">สมัครใหม่</option>
               <option value="pending_approve">รอตรวจสอบ</option>
+              <option value="paid">พร้อมมอบตัว</option>
               <option value="enrolled">มอบตัวแล้ว</option>
             </select>
             <ChevronDown
@@ -582,6 +583,39 @@
               </div>
             </div>
 
+            <!-- Card 5: รายการสั่งชุด -->
+            <div v-if="infoModal.orders && infoModal.orders.length > 0"
+              class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+              <div class="flex items-center gap-2.5 px-4 py-3 border-b border-gray-100">
+                <div class="w-7 h-7 rounded-lg bg-indigo-500 flex items-center justify-center flex-shrink-0">
+                  <ShoppingBag class="w-4 h-4 text-white" />
+                </div>
+                <span class="text-sm font-bold text-gray-700">รายการสั่งชุด</span>
+                <span class="ml-auto text-xs font-semibold text-indigo-500">{{ infoModal.orders.length }} รายการ</span>
+              </div>
+              <div class="p-4 space-y-2">
+                <div v-for="item in infoModal.orders" :key="item.ae_id"
+                  class="flex items-center gap-3 px-3 py-2.5 bg-gray-50 rounded-xl border border-gray-100">
+                  <div class="flex-1 min-w-0">
+                    <p class="text-sm font-semibold text-gray-800 truncate">{{ item.item_name }}</p>
+                    <p class="text-xs text-gray-400 mt-0.5">
+                      ไซส์ {{ item.size || '-' }} &times; {{ item.quantity }} ชิ้น
+                      &times; {{ Number(item.unit_price).toLocaleString() }} บาท
+                    </p>
+                  </div>
+                  <p class="text-sm font-bold text-indigo-600 flex-shrink-0 tabular-nums">
+                    {{ Number(item.total_price).toLocaleString() }} ฿
+                  </p>
+                </div>
+                <div class="flex items-center justify-between px-3 py-2.5 border-t border-dashed border-gray-200 mt-1">
+                  <span class="text-sm font-bold text-gray-700">รวมทั้งหมด</span>
+                  <span class="text-base font-black text-indigo-600 tabular-nums">
+                    {{ infoModal.orders.reduce((s: number, i: any) => s + Number(i.total_price), 0).toLocaleString() }} ฿
+                  </span>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           <!-- ── Footer ── -->
@@ -997,6 +1031,7 @@ const infoModal = ref({
   appId: '' as any,
   loading: false,
   data: null as any,
+  orders: [] as any[],
 })
 
 const deleteDialog = ref({
@@ -1033,10 +1068,15 @@ const openInfoModal = async (row: any) => {
     appId: row.ลำดับ,
     loading: true,
     data: null,
+    orders: [],
   }
   try {
-    const res = await api.get(`/applications/check/${row.เลขบัตรประชาชน}`)
-    infoModal.value.data = res.data?.data
+    const [appRes, ordersRes] = await Promise.allSettled([
+      api.get(`/applications/check/${row.เลขบัตรประชาชน}`),
+      api.get(`/enrollments/orders/${row.เลขบัตรประชาชน}`),
+    ])
+    if (appRes.status === 'fulfilled') infoModal.value.data = appRes.value.data?.data
+    if (ordersRes.status === 'fulfilled') infoModal.value.orders = ordersRes.value.data?.data ?? []
   } catch (e) {
     console.error('โหลดข้อมูลไม่สำเร็จ', e)
   } finally {
@@ -1885,7 +1925,7 @@ const filteredExportData = computed(() =>
     const matchBranch = !selectedBranch.value || row.สาขาวิชา === selectedBranch.value
     const matchCur = !selectedCurFilter.value || row.หลักสูตร.includes(selectedCurFilter.value)
     const matchStatus = selectedExportType.value === 'students'
-      ? row.สถานะ === 'enrolled'
+      ? (!selectedStatus.value || row.สถานะ === selectedStatus.value)
       : selectedExportType.value === 'payments'
         ? (row.สถานะ === 'paid' || row.สถานะ === 'enrolled')
         : selectedExportType.value === 'orders'
@@ -1939,6 +1979,7 @@ const toggleAll = () => {
 const getStatusLabel = (status: string): string => {
   const labels: Record<string, string> = {
     'enrolled': 'มอบตัวแล้ว',
+    'paid': 'พร้อมมอบตัว',
     'pending_payment': 'สมัครใหม่',
     'pending_approve': 'รอตรวจสอบ'
   }
@@ -2454,6 +2495,19 @@ const openPaymentSlipOnly = async () => {
   infoModal.value.open = false
   const d = infoModal.value.data
   if (!d) return
+
+  let expenses: any[] = []
+  try {
+    const res = await api.get(`/enrollments/orders/${d.id_card_number}`)
+    expenses = (res.data?.data ?? []).map((item: any) => ({
+      exp_name: item.item_name,
+      size: item.size,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price,
+    }))
+  } catch {}
+
   await exportPaymentPDF({
     prefix: d.prefix || '',
     fullName: d.full_name || '',
@@ -2465,6 +2519,7 @@ const openPaymentSlipOnly = async () => {
     dueDate: d.due_date
       ? new Date(d.due_date).toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })
       : '',
+    expenses,
   })
 }
 
