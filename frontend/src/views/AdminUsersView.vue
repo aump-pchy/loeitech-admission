@@ -325,7 +325,9 @@
         <StudentsTable v-else-if="selectedExportType === 'students'" :data="paginatedData" :selected-ids="selectedIds"
           @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
           @update:date-search="studentDateSearch = $event"
-          @generate-pdf="handleGeneratePDF" />
+          @generate-pdf="handleGeneratePDF"
+          @view-detail="openInfoModal"
+          @view-documents="(row) => openDocModal({ ...row, _showAll: true })" />
         <PaymentsTable v-else-if="selectedExportType === 'payments'" :data="paginatedData" :selected-ids="selectedIds"
           @update:selected-ids="selectedIds = $event" @toggle-all="toggleAll" :is-all-selected="isAllSelected"
           @view-documents="(row) => openDocModal({ ...row, _showAll: true })"
@@ -609,10 +611,16 @@
                 <Eye class="w-4 h-4" /> รายละเอียดการสมัคร
               </button>
 
-              <button v-else-if="infoModal.status === 'enrolled'" @click="printEnrollmentCert"
-                class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition shadow-sm shadow-emerald-200">
-                <BookCheck class="w-4 h-4" /> เอกสารมอบตัว
-              </button>
+              <template v-else-if="infoModal.status === 'enrolled'">
+                <button @click="openDocModalFromInfo"
+                  class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-sm font-semibold transition shadow-sm shadow-blue-200">
+                  <Eye class="w-4 h-4" /> ดูเอกสาร
+                </button>
+                <button @click="printEnrollmentCert"
+                  class="inline-flex items-center gap-1.5 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl text-sm font-semibold transition shadow-sm shadow-emerald-200">
+                  <BookCheck class="w-4 h-4" /> เอกสารมอบตัว
+                </button>
+              </template>
             </div>
           </div>
 
