@@ -33,9 +33,11 @@ router.get('/status/:idCard', getEnrollmentStatus)
 // ดึงข้อมูลการสั่งซื้อ (นักเรียนใช้ — public)
 router.get('/orders/:idCard', getOrdersByIdCard)
 
+// สรุปยอดรวม (public — ใช้แสดงสถิติหน้าแรก)
+router.get('/summary', getEnrollmentSummary)
+
 // Admin-only routes
 router.get('/onsite', requireAuth, getOnsiteEnrollments)
 router.post('/onsite', requireAuth, upsertOnsiteEnrollment)
-router.get('/summary', requireAuth, getEnrollmentSummary)
 
 export default router

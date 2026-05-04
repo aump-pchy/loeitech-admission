@@ -14,10 +14,15 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
+      const wasAuthenticated = localStorage.getItem('isAuthenticated') === 'true'
       localStorage.removeItem('isAuthenticated')
       localStorage.removeItem('auth_token')
       localStorage.removeItem('auth_role')
-      window.location.href = '/login'
+      // redirect ไป login เฉพาะเมื่อเคย login อยู่แล้ว (session หมดอายุ)
+      // ถ้าไม่เคย login จะไม่ redirect เพื่อให้หน้าสาธารณะใช้ได้ปกติ
+      if (wasAuthenticated) {
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
