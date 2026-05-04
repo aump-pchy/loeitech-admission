@@ -205,6 +205,76 @@ export const deleteApplicant = async (req: Request, res: Response) => {
   }
 }
 
+// GET /api/admin/applicants/detail/:idCard
+// ข้อมูลเต็มของผู้สมัครสำหรับ admin (รวม PII)
+export const getApplicantDetail = async (req: Request, res: Response) => {
+  try {
+    const { idCard } = req.params
+    const result = await pool.query(`
+      SELECT
+        a.app_id, a.prefix, a.full_name, a.id_card_number,
+        a.phone, a.email, a.address,
+        a.prev_school, a.prev_level, a.prev_year, a.gpa,
+        a.status, a.created_at,
+        c.cur_name, d.div_name,
+        p.total_amount, p.required_amount, p.due_date,
+        p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
+        p.slip_approved, p.slip_error_message,
+        e.enrolled_at, e.verified_at AS enroll_verified_at,
+        MAX(CASE WHEN doc.doc_type = 'self_house_front'   THEN doc.file_path END) AS self_front_url,
+        MAX(CASE WHEN doc.doc_type = 'self_house_back'    THEN doc.file_path END) AS self_back_url,
+        MAX(CASE WHEN doc.doc_type = 'father_house_front' THEN doc.file_path END) AS father_front_url,
+        MAX(CASE WHEN doc.doc_type = 'father_house_back'  THEN doc.file_path END) AS father_back_url,
+        MAX(CASE WHEN doc.doc_type = 'mother_house_front' THEN doc.file_path END) AS mother_front_url,
+        MAX(CASE WHEN doc.doc_type = 'mother_house_back'  THEN doc.file_path END) AS mother_back_url,
+        MAX(CASE WHEN doc.doc_type = 'payment_slip'       THEN doc.file_path END) AS payment_slip_url
+      FROM applicants a
+      JOIN curriculums c ON c.cur_id = a.cur_id
+      JOIN divisions d ON d.div_id = a.div_id
+      LEFT JOIN payments p ON p.app_id = a.app_id
+      LEFT JOIN enrollments e ON e.app_id = a.app_id
+      LEFT JOIN documents doc ON doc.app_id = a.app_id
+      WHERE a.id_card_number = $1
+      GROUP BY
+        a.app_id, a.prefix, a.full_name, a.id_card_number,
+        a.phone, a.email, a.address,
+        a.prev_school, a.prev_level, a.prev_year, a.gpa,
+        a.status, a.created_at,
+        c.cur_name, d.div_name,
+        p.total_amount, p.required_amount, p.due_date,
+        p.paid_at, p.verified_at, p.slip_sender, p.slip_receiver,
+        p.slip_approved, p.slip_error_message,
+        e.enrolled_at, e.verified_at
+    `, [idCard])
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ success: false, message: 'ไม่พบข้อมูลผู้สมัคร' })
+    }
+
+    const row = result.rows[0]
+    res.json({
+      success: true,
+      data: {
+        ...row,
+        self_front_url:   toUrl(row.self_front_url),
+        self_back_url:    toUrl(row.self_back_url),
+        father_front_url: toUrl(row.father_front_url),
+        father_back_url:  toUrl(row.father_back_url),
+        mother_front_url: toUrl(row.mother_front_url),
+        mother_back_url:  toUrl(row.mother_back_url),
+        payment_slip_url: toUrl(row.payment_slip_url),
+        slip_sender:         row.slip_sender ?? '-',
+        slip_receiver:       row.slip_receiver ?? '-',
+        slip_approved:       row.slip_approved ?? null,
+        slip_error_message:  row.slip_error_message ?? '',
+      }
+    })
+  } catch (err) {
+    console.error('getApplicantDetail error:', err)
+    res.status(500).json({ success: false, message: 'เกิดข้อผิดพลาด' })
+  }
+}
+
 export const truncateApplicants = async (_req: Request, res: Response) => {
   const client = await pool.connect()
   try {
